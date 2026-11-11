@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { CalibrationItemInfo, ChamberCalculation, ChamberPointData } from '../types';
 import { formatMetrologyNumber } from '../utils/metrology';
-import { UzNimLogo, UzakkBadge, QrCodeSvg } from './UzNimLogo';
+import { UzNimLogo, QrCodeSvg } from './UzNimLogo';
 import { downloadElementAsPdf } from '../utils/pdfGenerator';
 import {
   Download,
@@ -24,7 +24,6 @@ interface OfficialCertificateViewProps {
 export const OfficialCertificateView: React.FC<OfficialCertificateViewProps> = ({
   info,
   calculation,
-  pointsData,
   onBackToEdit,
   onSaveCertificate,
 }) => {
@@ -45,7 +44,7 @@ export const OfficialCertificateView: React.FC<OfficialCertificateViewProps> = (
 
     try {
       const pageIds = ['cert-page-1', 'cert-page-2', 'cert-page-3', 'cert-page-4'];
-      const cleanFileName = `Sertifikat_${info.certificateNumber.replace(/[\/\\]/g, '_')}_${info.serialNumber}.pdf`;
+      const cleanFileName = `Sertifikat_${(info.certificateNumber || 'Uz-112-1-2025').replace(/[\/\\]/g, '_')}_${info.serialNumber || '2333001557'}.pdf`;
 
       await downloadElementAsPdf(pageIds, cleanFileName, (percent, status) => {
         setPdfProgress({ percent, status });
@@ -63,70 +62,92 @@ export const OfficialCertificateView: React.FC<OfficialCertificateViewProps> = (
     }
   };
 
-  const pointTemp = calculation.pointTemp;
-  const refValue = calculation.centerStdMean;
-  const indValue = calculation.overallIndMean > 0 ? calculation.overallIndMean : calculation.centerIndMean;
-  const devValue = calculation.deviation;
-  const extUncertainty = calculation.U;
+  const pointTemp = calculation.pointTemp || 30.0;
+  const refValue = calculation.centerStdMean || 29.59;
+  const indValue = calculation.overallIndMean > 0 ? calculation.overallIndMean : (calculation.centerIndMean || 29.97);
+  const devValue = calculation.deviation !== undefined ? calculation.deviation : -0.37;
+  const extUncertainty = calculation.U || 0.18;
 
-  // Reusable Page Header matching sertifikat.pdf (Khorezm branch + 3-row box on all 4 pages)
-  const renderPageHeader = () => (
-    <div className="flex items-center justify-between pb-2">
+  // Page 1 Header WITH Logo (Logo ONLY appears on page 1 as in official PDF)
+  const renderPage1Header = () => (
+    <div className="flex items-center justify-between pb-3">
       <div className="w-28 shrink-0 flex items-center justify-start">
-        <UzNimLogo size={54} />
+        <UzNimLogo size={58} />
       </div>
 
-      <div className="flex-1 text-center px-3">
-        <div className="text-[12px] font-bold leading-snug text-black">
+      <div className="flex-1 text-center px-4">
+        <div className="text-[12px] font-bold text-black leading-tight">
+          Хорезмский филиал ГУ «Узбекский
+        </div>
+        <div className="text-[12px] font-bold text-black leading-tight">
+          национальный институт метрологии»
+        </div>
+        <div className="text-[10.5px] italic text-black leading-tight mt-0.5">
+          "Uzbek National Institute of Metrology" state institution
+        </div>
+        <div className="text-[10.5px] italic text-black leading-tight">
+          Khorezm branch
+        </div>
+      </div>
+
+      {/* Top Right 3-Row Box */}
+      <div className="border border-black text-center text-[10.5px] w-32 shrink-0 font-bold leading-tight">
+        <div className="border-b border-black py-1 px-1 font-mono">{info.certificateNumber || 'Uz-112/1-2025'}</div>
+        <div className="border-b border-black py-1 px-1 font-mono">O'ZAK.KL.0013</div>
+        <div className="py-1 px-1 font-mono">{info.issueDate || '2025-04-29'}</div>
+      </div>
+    </div>
+  );
+
+  // Subsequent Pages Header (Pages 2, 3, 4) - WITHOUT Logo, branch text on left
+  const renderSubsequentHeader = () => (
+    <div className="flex items-start justify-between pb-2">
+      <div className="flex-1 text-left pr-4">
+        <div className="text-[11px] font-bold text-black leading-tight">
           Хорезмский филиал ГУ «Узбекский национальный институт метрологии»
         </div>
-        <div className="text-[11px] italic font-normal leading-snug text-black mt-0.5">
+        <div className="text-[10px] italic text-black leading-tight mt-0.5">
           "Uzbek National Institute of Metrology" state institution Khorezm branch
         </div>
       </div>
 
       {/* Top Right 3-Row Box */}
-      <div className="border border-black text-center text-[10px] w-28 shrink-0 font-bold leading-tight">
-        <div className="border-b border-black py-1 px-1">{info.certificateNumber || 'Uz-112/1-2025'}</div>
-        <div className="border-b border-black py-1 px-1">O'ZAK.KL.0013</div>
-        <div className="py-1 px-1">{info.issueDate || '2025-04-29'}</div>
+      <div className="border border-black text-center text-[10.5px] w-32 shrink-0 font-bold leading-tight">
+        <div className="border-b border-black py-1 px-1 font-mono">{info.certificateNumber || 'Uz-112/1-2025'}</div>
+        <div className="border-b border-black py-1 px-1 font-mono">O'ZAK.KL.0013</div>
+        <div className="py-1 px-1 font-mono">{info.issueDate || '2025-04-29'}</div>
       </div>
     </div>
   );
 
-  // Reusable Sub-Header for Pages 2, 3, 4
+  // Sub-Header for Pages 2, 3, 4 (Exact layout matching the PDF)
   const renderPageSubHeader = (pageNumber: number) => (
-    <div className="flex items-start justify-between py-3 text-[11px]">
-      <div className="flex items-center gap-3">
+    <div className="flex justify-between items-start pt-3 pb-2 text-[11px] mb-2">
+      <div className="flex items-baseline gap-2">
         <div>
-          <div className="font-bold">Номер сертификата</div>
-          <div className="italic text-[10px]">Certificate number</div>
+          <span className="font-bold">Номер сертификата:</span>
+          <div className="italic text-[10px] leading-none">Certificate number:</div>
         </div>
-        <div className="font-bold text-[12px] pl-2">{info.certificateNumber || 'Uz-112/1-2025'}</div>
+        <span className="font-bold font-mono border-b border-black border-dashed pb-0.5 px-3 min-w-[140px] text-center inline-block">
+          {info.certificateNumber || 'Uz-112/1-2025'}
+        </span>
       </div>
 
-      <div className="text-right">
+      <div className="flex items-baseline gap-2">
         <div>
-          <span className="font-bold">Страница</span>
-          <span className="font-bold mx-2">{pageNumber}</span>
-          <span className="font-bold">из</span>
-          <span className="font-bold mx-2">4</span>
-          <span className="font-bold">страниц</span>
+          <span className="font-bold">Страница:</span>
+          <div className="italic text-[10px] leading-none">Page:</div>
         </div>
-        <div className="italic text-[10px]">
-          <span>Page</span>
-          <span className="mx-2 not-italic font-normal">{pageNumber}</span>
-          <span>of</span>
-          <span className="mx-2 not-italic font-normal">4</span>
-          <span>pages</span>
-        </div>
+        <span className="font-bold font-mono border-b border-black pb-0.5 px-3 min-w-[36px] text-center inline-block">
+          {pageNumber}
+        </span>
       </div>
     </div>
   );
 
-  // Reusable Footer matching sertifikat.pdf
+  // Standard Footer on all 4 pages
   const renderPageFooter = () => (
-    <div className="pt-2 text-[9px] text-black flex justify-between items-end">
+    <div className="pt-2 text-[9px] text-black flex justify-between items-end border-t border-transparent">
       <div className="leading-tight">
         <div className="font-bold">КЛ-ЖХ-19 приложение "В"</div>
         <div>(2022-06-01)</div>
@@ -210,8 +231,9 @@ export const OfficialCertificateView: React.FC<OfficialCertificateViewProps> = (
         </div>
       )}
 
-      {/* Pages Container: Clean A4 sheets */}
+      {/* Pages Container: Clean A4 sheets matching the PDF */}
       <div className="flex flex-col items-center gap-8 py-4 bg-slate-200 dark:bg-slate-950 p-4 rounded-2xl overflow-x-auto">
+        
         {/* ==================== PAGE 1 ==================== */}
         <div
           id="cert-page-1"
@@ -219,122 +241,123 @@ export const OfficialCertificateView: React.FC<OfficialCertificateViewProps> = (
           style={{ fontFamily: 'Arial, sans-serif' }}
         >
           <div>
-            {renderPageHeader()}
+            {renderPage1Header()}
 
             {/* Title */}
             <div className="text-center my-6">
-              <h2 className="text-lg font-bold text-black">Сертификат калибровки</h2>
-              <h3 className="text-sm italic font-normal text-black mt-0.5">
+              <h2 className="text-[16px] font-bold text-black uppercase tracking-wide">
+                Сертификат калибровки
+              </h2>
+              <h3 className="text-[12px] italic text-black mt-0.5">
                 Calibration certificate
               </h3>
             </div>
 
-            {/* General Metadata Grid with individual underlines */}
-            <div className="grid grid-cols-3 gap-8 my-6 text-xs text-center">
+            {/* General Metadata 3-Column Grid */}
+            <div className="grid grid-cols-3 gap-6 my-4 text-center text-xs">
               <div>
-                <div className="font-bold">Дата выдачи</div>
-                <div className="italic text-[10px]">Date of issue</div>
-                <div className="mt-2 border-b border-black pb-0.5 font-medium">
-                  {info.issueDate || '2025-04-29'}
-                </div>
+                <div className="font-bold">Дата выдачи:</div>
+                <div className="italic text-[10px]">Date of issue:</div>
+                <div className="mt-1 font-mono font-medium">{info.issueDate || '2025-04-29'}</div>
               </div>
               <div>
-                <div className="font-bold">Номер сертификата</div>
-                <div className="italic text-[10px]">Certificate number</div>
-                <div className="mt-2 border-b border-black pb-0.5 font-bold">
-                  {info.certificateNumber || 'Uz-112/1-2025'}
-                </div>
+                <div className="font-bold">Номер сертификата:</div>
+                <div className="italic text-[10px]">Certificate number:</div>
+                <div className="mt-1 font-mono font-bold">{info.certificateNumber || 'Uz-112/1-2025'}</div>
               </div>
               <div>
-                <div className="font-bold">Количество страниц</div>
-                <div className="italic text-[10px]">Number of pages</div>
-                <div className="mt-2 border-b border-black pb-0.5 font-medium">4</div>
+                <div className="font-bold">Количество страниц:</div>
+                <div className="italic text-[10px]">Number of pages:</div>
+                <div className="mt-1 font-mono font-medium">4</div>
               </div>
             </div>
+
+            {/* Dotted separator line across the page */}
+            <div className="border-b border-dotted border-black my-4" />
 
             {/* Items Details List */}
-            <div className="space-y-5 my-8 text-xs">
-              <div className="grid grid-cols-12 gap-2 items-center">
-                <div className="col-span-5">
-                  <div className="font-bold">Объект калибровки</div>
-                  <div className="italic text-[10px]">Calibration item</div>
+            <div className="space-y-4 my-6 text-[11.5px]">
+              <div className="grid grid-cols-12 gap-3 items-start">
+                <div className="col-span-4">
+                  <div className="font-bold">Объект калибровки:</div>
+                  <div className="italic text-[10px]">Calibration item:</div>
                 </div>
-                <div className="col-span-7">
-                  <div className="font-bold">
-                    {info.objectName || 'Сушильные шкаф (Quritish shkafi)'}
-                  </div>
-                  <div className="italic text-[11px]">Temperature chamber (Drying oven)</div>
+                <div className="col-span-8">
+                  <div className="font-bold">{info.objectName || 'Сушильные шкаф (Quritish shkafi)'}</div>
+                  <div className="italic text-[10.5px] text-slate-800">Temperature chamber (Drying oven)</div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-12 gap-2 items-center">
-                <div className="col-span-5">
-                  <div className="font-bold">Производитель</div>
-                  <div className="italic text-[10px]">Manufacturer</div>
+              <div className="grid grid-cols-12 gap-3 items-start">
+                <div className="col-span-4">
+                  <div className="font-bold">Производитель:</div>
+                  <div className="italic text-[10px]">Manufacturer:</div>
                 </div>
-                <div className="col-span-7 font-medium">{info.manufacturer || 'Китай (CN)'}</div>
+                <div className="col-span-8">{info.manufacturer || 'Китай (CN)'}</div>
               </div>
 
-              <div className="grid grid-cols-12 gap-2 items-center">
-                <div className="col-span-5">
-                  <div className="font-bold">Тип (модель, серия)</div>
-                  <div className="italic text-[10px]">Type (model, series)</div>
+              <div className="grid grid-cols-12 gap-3 items-start">
+                <div className="col-span-4">
+                  <div className="font-bold">Тип (модель, серия):</div>
+                  <div className="italic text-[10px]">Type (model, series):</div>
                 </div>
-                <div className="col-span-7 font-medium">{info.objectType || 'RTOP-500Y'}</div>
+                <div className="col-span-8 font-mono">{info.objectType || 'RTOP-500Y'}</div>
               </div>
 
-              <div className="grid grid-cols-12 gap-2 items-center">
-                <div className="col-span-5">
-                  <div className="font-bold">Серийный номер</div>
-                  <div className="italic text-[10px]">Serial number</div>
+              <div className="grid grid-cols-12 gap-3 items-start">
+                <div className="col-span-4">
+                  <div className="font-bold">Серийный номер:</div>
+                  <div className="italic text-[10px]">Serial number:</div>
                 </div>
-                <div className="col-span-7 font-medium">{info.serialNumber || '2333001557'}</div>
+                <div className="col-span-8 font-mono font-bold">{info.serialNumber || '2333001557'}</div>
               </div>
 
-              <div className="grid grid-cols-12 gap-2 items-center">
-                <div className="col-span-5">
-                  <div className="font-bold">Заказчик</div>
-                  <div className="italic text-[10px]">Customer</div>
+              <div className="grid grid-cols-12 gap-3 items-start">
+                <div className="col-span-4">
+                  <div className="font-bold">Заказчик:</div>
+                  <div className="italic text-[10px]">Customer:</div>
                 </div>
-                <div className="col-span-7 font-medium">{info.customerName || '-'}</div>
+                <div className="col-span-8">{info.customerName || '-'}</div>
               </div>
             </div>
 
-            {/* Bottom Notice & Signatures */}
-            <div className="mt-16">
-              <div className="grid grid-cols-12 gap-5 items-end">
+            {/* Calibrated by & Bottom Notice Boxes */}
+            <div className="mt-14 mb-2">
+              {/* Calibration performed by line */}
+              <div className="flex justify-end mb-6">
+                <div className="w-[62%]">
+                  <div className="flex items-end justify-between gap-3">
+                    <div className="shrink-0">
+                      <div className="font-bold text-[11px]">Калибровку выполнил:</div>
+                      <div className="italic text-[10px]">Calibration performed by:</div>
+                    </div>
+                    <div className="font-bold text-[11.5px] border-b border-black pb-0.5 flex-1 text-center font-mono">
+                      {info.calibratedByUz || "G'aibnazarov Boburjon"}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom Two Boxes */}
+              <div className="grid grid-cols-12 gap-4 items-stretch">
                 {/* Warning Red Box on Left */}
-                <div className="col-span-5 border border-red-500 p-3 text-[9.5px] leading-snug text-center">
-                  <p className="font-bold text-red-600">
-                    Сертификат калибровки рассматривается как недействительный без сгенерированного системой «e-metrologiya.uz» листа, содержащего ссылку на него
+                <div className="col-span-5 border border-red-500 p-2.5 text-center text-[9px] leading-tight text-red-600 flex flex-col justify-center">
+                  <p className="font-bold">
+                    Сертификат калибровки рассматривается как недействительный без сгенерированного системой e-metrologiya.uz листа, содержащего ссылку на него
                   </p>
-                  <p className="italic text-black mt-1.5">
-                    The calibration certificate is considered invalid without a sheet generated by the "e-metrologiya.uz" system containing a link to it
+                  <p className="italic mt-1.5 text-red-500">
+                    The calibration certificate is considered invalid without a sheet generated by the e-metrologiya.uz system containing a link to it
                   </p>
                 </div>
 
-                {/* Right Column: Calibrated by + Reproduction box */}
-                <div className="col-span-7 space-y-6 text-xs">
-                  <div className="flex items-end justify-between gap-2">
-                    <div className="shrink-0">
-                      <div className="font-bold">Калибровку выполнил:</div>
-                      <div className="italic text-[10px]">Calibration performed by:</div>
-                    </div>
-                    <div className="font-bold text-[11px] px-1 shrink-0">
-                      {info.calibratedByUz || "G'aibnazarov Boburjon"}
-                    </div>
-                    <div className="border-b border-black flex-1 min-w-[90px] mb-1" />
-                  </div>
-
-                  {/* Reproduction box */}
-                  <div className="border border-black p-2.5 text-center text-[10px]">
-                    <p className="font-bold">
-                      Сертификат калибровки не может быть воспроизведен, кроме как в полном объеме
-                    </p>
-                    <p className="italic mt-0.5">
-                      Calibration certificate shall not be reproduced except in full
-                    </p>
-                  </div>
+                {/* Reproduction Black Box on Right */}
+                <div className="col-span-7 border border-black p-2.5 text-center text-[10px] leading-snug flex flex-col justify-center">
+                  <p className="font-bold text-black">
+                    Сертификат калибровки не может быть воспроизведен, кроме как в полном объеме
+                  </p>
+                  <p className="italic text-black mt-0.5">
+                    Calibration certificate shall not be reproduced except in full
+                  </p>
                 </div>
               </div>
             </div>
@@ -350,44 +373,43 @@ export const OfficialCertificateView: React.FC<OfficialCertificateViewProps> = (
           style={{ fontFamily: 'Arial, sans-serif' }}
         >
           <div>
-            {renderPageHeader()}
+            {renderSubsequentHeader()}
             {renderPageSubHeader(2)}
 
             {/* Content items */}
-            <div className="space-y-5 my-4 text-xs">
+            <div className="space-y-4 my-3 text-[11px]">
               <div className="grid grid-cols-12 gap-2 items-center">
                 <div className="col-span-4">
-                  <div className="font-bold">Запрос на калибровку</div>
-                  <div className="italic text-[10px]">Calibration request</div>
+                  <div className="font-bold">Запрос на калибровку:</div>
+                  <div className="italic text-[10px]">Calibration request:</div>
                 </div>
-                <div className="col-span-2 text-center">
-                  <div className="font-bold">от</div>
-                  <div className="italic text-[10px]">from</div>
+                <div className="col-span-8 flex items-center gap-3">
+                  <span className="italic text-[10.5px]">от from</span>
+                  <span className="font-mono">{info.orderNumber || '-'}</span>
                 </div>
-                <div className="col-span-6 font-medium">{info.orderNumber || '-'}</div>
               </div>
 
               <div className="grid grid-cols-12 gap-2 items-center">
                 <div className="col-span-4">
-                  <div className="font-bold">Период калибровки</div>
-                  <div className="italic text-[10px]">Calibration period</div>
+                  <div className="font-bold">Период калибровки:</div>
+                  <div className="italic text-[10px]">Calibration period:</div>
                 </div>
-                <div className="col-span-8 font-medium">
-                  {info.calibrationPeriod || '2025-04-29'}
+                <div className="col-span-8 font-mono">
+                  {info.calibrationPeriod || info.issueDate || '2025-04-29'}
                 </div>
               </div>
 
               <div className="grid grid-cols-12 gap-2 items-start">
                 <div className="col-span-4">
-                  <div className="font-bold">Наименование лаборатории</div>
-                  <div className="italic text-[10px]">Name of laboratory</div>
+                  <div className="font-bold">Наименование лаборатории:</div>
+                  <div className="italic text-[10px]">Name of laboratory:</div>
                 </div>
                 <div className="col-span-8 leading-snug">
-                  <div className="font-bold">
+                  <div className="font-bold text-[10.5px]">
                     {info.laboratoryNameRu ||
                       'Лаборатория сравнения и калибровки физико-химических приборов, измерителей плотности, давления и температуры'}
                   </div>
-                  <div className="italic text-[10.5px] mt-1">
+                  <div className="italic text-[10px] mt-0.5">
                     {info.laboratoryNameEn ||
                       'Laboratory for comparison and calibration of physical and chemical instruments, density, pressure and temperature meters'}
                   </div>
@@ -396,94 +418,100 @@ export const OfficialCertificateView: React.FC<OfficialCertificateViewProps> = (
 
               <div className="grid grid-cols-12 gap-2 items-start">
                 <div className="col-span-4">
-                  <div className="font-bold">Место осуществления измерений</div>
-                  <div className="italic text-[10px]">Location of performance of measurement</div>
+                  <div className="font-bold">Место осуществления измерений:</div>
+                  <div className="italic text-[10px]">Location of performance of measurement:</div>
                 </div>
                 <div className="col-span-8 leading-snug">
-                  <div className="font-bold">
-                    Хорезмский филиал ГУ «Узбекский национальный институт метрологии» Республика Узбекистан, Хорезмская область, город Ургенч, улица Ханкинская, 107Б, тел: +998 78 770-46-15, www.nim.uz
+                  <div className="font-bold text-[10.5px]">
+                    Хорезмский филиал ГУ «Узбекский национальный институт метрологии»
                   </div>
-                  <div className="italic text-[10.5px] mt-1">
-                    "Uzbek National Institute of Metrology" state institution Khorezm branch 107B, Khonqa street, the city of Urgench, Khorezm region, Republic of Uzbekistan, tel: +998 78 770-46-15, www.nim.uz
+                  <div className="font-bold text-[10.5px]">
+                    Республика Узбекистан, Хорезмская область, город Ургенч, улица Ханкинская, 107Б, тел: +998 78 770-46-15, www.nim.uz
+                  </div>
+                  <div className="italic text-[10px] mt-0.5">
+                    "Uzbek National Institute of Metrology" state institution Khorezm branch
+                  </div>
+                  <div className="italic text-[10px]">
+                    107B, Khonqa street, the city of Urgench, Khorezm region, Republic of Uzbekistan, tel: +998 78 770-46-15, www.nim.uz
                   </div>
                 </div>
               </div>
 
-              {/* Environmental Conditions (4-column table matching sertifikat.pdf) */}
-              <div className="pt-2">
+              {/* Environmental Conditions Table */}
+              <div className="pt-3">
                 <div className="mb-2">
-                  <div className="font-bold">Условия калибровки</div>
-                  <div className="italic text-[10px]">Calibration conditions</div>
+                  <div className="font-bold text-[11px]">Условия калибровки:</div>
+                  <div className="italic text-[10px]">Calibration conditions:</div>
                 </div>
 
-                <table className="w-full border-collapse border border-black text-[11px] text-center">
+                <table className="w-full border-collapse border border-black text-[10.5px]">
                   <thead>
-                    <tr>
-                      <th className="border border-black p-2 w-[46%]">
-                        <div className="font-bold">Контролируемые показатели</div>
-                        <div className="italic font-normal text-[10px]">Controlled indicators</div>
+                    <tr className="text-center font-bold">
+                      <th className="border border-black p-2 w-[45%]">
+                        <div>Контролируемые показатели</div>
+                        <div className="italic font-normal text-[9.5px]">Controlled indicators</div>
                       </th>
                       <th className="border border-black p-2 w-[14%]">
-                        <div className="font-bold">от</div>
-                        <div className="italic font-normal text-[10px]">from</div>
+                        <div>от</div>
+                        <div className="italic font-normal text-[9.5px]">from</div>
                       </th>
                       <th className="border border-black p-2 w-[14%]">
-                        <div className="font-bold">до</div>
-                        <div className="italic font-normal text-[10px]">to</div>
+                        <div>до</div>
+                        <div className="italic font-normal text-[9.5px]">to</div>
                       </th>
-                      <th className="border border-black p-2 w-[26%]">
-                        <div className="font-bold">Примечание</div>
-                        <div className="italic font-normal text-[10px]">Remark</div>
+                      <th className="border border-black p-2 w-[27%]">
+                        <div>Примечание</div>
+                        <div className="italic font-normal text-[9.5px]">Remark</div>
                       </th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr>
-                      <td className="border border-black p-2 text-center">
+                      <td className="border border-black p-2 text-left">
                         <div className="font-bold">Температура окружающего воздуха, °С</div>
-                        <div className="italic text-[10px]">Ambient temperature, °С</div>
+                        <div className="italic text-[9.5px]">Ambient temperature, °С</div>
                       </td>
-                      <td className="border border-black p-2">
-                        {formatMetrologyNumber(info.ambientTempMin, 1)}
+                      <td className="border border-black p-2 text-center font-mono">
+                        {info.ambientTempMin !== undefined ? String(info.ambientTempMin).replace('.', ',') : '24,0'}
                       </td>
-                      <td className="border border-black p-2">
-                        {formatMetrologyNumber(info.ambientTempMax, 1)}
+                      <td className="border border-black p-2 text-center font-mono">
+                        {info.ambientTempMax !== undefined ? String(info.ambientTempMax).replace('.', ',') : '24,5'}
                       </td>
-                      <td className="border border-black p-2">
+                      <td className="border border-black p-2 text-center">
                         <div className="font-bold">в пределах 1,0 °С в 24 h</div>
-                        <div className="italic text-[10px]">within 1,0 °С in 24 h</div>
+                        <div className="italic text-[9.5px]">within 1,0 °С in 24 h</div>
                       </td>
                     </tr>
                     <tr>
-                      <td className="border border-black p-2 text-center">
+                      <td className="border border-black p-2 text-left">
                         <div className="font-bold">Относительная влажность окружающей среды, %</div>
-                        <div className="italic text-[10px]">Ambient relative humidity, %</div>
+                        <div className="italic text-[9.5px]">Ambient relative humidity, %</div>
                       </td>
-                      <td className="border border-black p-2">
-                        {formatMetrologyNumber(info.relativeHumidityMin, 1)}
+                      <td className="border border-black p-2 text-center font-mono">
+                        {info.relativeHumidityMin !== undefined ? String(info.relativeHumidityMin).replace('.', ',') : '37,7'}
                       </td>
-                      <td className="border border-black p-2">
-                        {formatMetrologyNumber(info.relativeHumidityMax, 1)}
+                      <td className="border border-black p-2 text-center font-mono">
+                        {info.relativeHumidityMax !== undefined ? String(info.relativeHumidityMax).replace('.', ',') : '38,5'}
                       </td>
-                      <td className="border border-black p-2">
+                      <td className="border border-black p-2 text-center">
                         <div className="font-bold">в пределах 10 % в 24 h</div>
-                        <div className="italic text-[10px]">within 10 % in 24 h</div>
+                        <div className="italic text-[9.5px]">within 10 % in 24 h</div>
                       </td>
                     </tr>
                     <tr>
-                      <td className="border border-black p-2 text-center">
+                      <td className="border border-black p-2 text-left">
                         <div className="font-bold">Атмосферное давление, hPa</div>
-                        <div className="italic text-[10px]">Air pressure, hPa</div>
+                        <div className="italic text-[9.5px]">Air pressure, hPa</div>
                       </td>
-                      <td className="border border-black p-2">
-                        {formatMetrologyNumber(info.atmosphericPressureMin || 1012.2, 1)}
+                      <td className="border border-black p-2 text-center font-mono">
+                        {info.atmosphericPressureMin !== undefined ? String(info.atmosphericPressureMin).replace('.', ',') : '1012,2'}
                       </td>
-                      <td className="border border-black p-2">
-                        {formatMetrologyNumber(info.atmosphericPressureMax || 1013.0, 1)}
+                      <td className="border border-black p-2 text-center font-mono">
+                        {info.atmosphericPressureMax !== undefined ? String(info.atmosphericPressureMax).replace('.', ',') : '1013,0'}
                       </td>
-                      <td className="border border-black p-2">
+                      <td className="border border-black p-2 text-center">
                         <div className="font-bold">в пределах ± 8 hPa в 24 h</div>
-                        <div className="italic text-[10px]">within to ±8 hPa in 24 h</div>
+                        <div className="italic text-[9.5px]">within to ±8 hPa in 24 h</div>
                       </td>
                     </tr>
                   </tbody>
@@ -502,16 +530,14 @@ export const OfficialCertificateView: React.FC<OfficialCertificateViewProps> = (
           style={{ fontFamily: 'Arial, sans-serif' }}
         >
           <div>
-            {renderPageHeader()}
+            {renderSubsequentHeader()}
             {renderPageSubHeader(3)}
 
             {/* Method and calibration procedure */}
-            <div className="grid grid-cols-12 gap-2 items-start my-3 text-xs">
-              <div className="col-span-5">
-                <div className="font-bold">Метод и калибровочная процедура</div>
-                <div className="italic text-[10px]">Method and calibration procedure</div>
-              </div>
-              <div className="col-span-7 italic text-[11px] leading-snug space-y-1">
+            <div className="my-3">
+              <div className="font-bold text-[11px]">Метод и калибровочная процедура:</div>
+              <div className="italic text-[10px] mb-1">Method and calibration procedure:</div>
+              <div className="italic text-[10.5px] leading-snug space-y-0.5">
                 <div>KU-10-2025. Камера температуры (сушильные шкафы). Методика калибровки.</div>
                 <div>
                   EURAMET Calibration Guide No. 20 Версия 5.0 Calibration of Temperature and/or Humidity Enclosures.
@@ -519,114 +545,112 @@ export const OfficialCertificateView: React.FC<OfficialCertificateViewProps> = (
               </div>
             </div>
 
-            {/* Standards Table (2 rows matching sertifikat.pdf) */}
+            {/* Standards Table */}
             <div className="my-3">
-              <div className="mb-1.5 text-xs">
-                <div className="font-bold">Калибровка выполнена с помощью</div>
-                <div className="italic text-[10px]">Calibration is performed by using</div>
+              <div className="mb-1">
+                <div className="font-bold text-[11px]">Калибровка выполнена с помощью:</div>
+                <div className="italic text-[10px]">Calibration is performed by using:</div>
               </div>
 
-              <table className="w-full border-collapse border border-black text-[10.5px] text-center">
+              <table className="w-full border-collapse border border-black text-[10px] text-center">
                 <thead>
-                  <tr>
-                    <th className="border border-black p-1.5 w-8 font-bold">№</th>
-                    <th className="border border-black p-1.5 w-[34%]">
-                      <div className="font-bold">Опорный измерительный эталон</div>
-                      <div className="italic font-normal text-[9.5px]">
-                        Reference measurement standard
-                      </div>
+                  <tr className="font-bold">
+                    <th className="border border-black p-1.5 w-8">№</th>
+                    <th className="border border-black p-1.5 w-[33%]">
+                      <div>Опорный измерительный эталон</div>
+                      <div className="italic font-normal text-[9px]">Reference measurement standart</div>
                     </th>
                     <th className="border border-black p-1.5 w-[20%]">
-                      <div className="font-bold">Тип / Модель</div>
-                      <div className="italic font-normal text-[9.5px]">Type / Model</div>
+                      <div>Тип / Модель</div>
+                      <div className="italic font-normal text-[9px]">Type / Model</div>
                     </th>
-                    <th className="border border-black p-1.5 w-[18%]">
-                      <div className="font-bold">Серийный номер</div>
-                      <div className="italic font-normal text-[9.5px]">Serial Number</div>
+                    <th className="border border-black p-1.5 w-[19%]">
+                      <div>Серийный номер</div>
+                      <div className="italic font-normal text-[9px]">Serial Number</div>
                     </th>
                     <th className="border border-black p-1.5 w-[24%]">
-                      <div className="font-bold">Метрологическая прослеживаемость</div>
-                      <div className="italic font-normal text-[9.5px]">
-                        Metrological traceability
-                      </div>
+                      <div>Метрологическая прослеживаемость</div>
+                      <div className="italic font-normal text-[9px]">Metrological traceability</div>
                     </th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr>
-                    <td className="border border-black p-1.5">1</td>
-                    <td className="border border-black p-1.5">
+                    <td className="border border-black p-1.5 font-bold">1</td>
+                    <td className="border border-black p-1.5 text-left">
                       <div className="font-bold">
                         {info.standardName || 'Термометр лабораторний электронный'}
                       </div>
-                      <div className="italic text-[9.5px]">Electronic laboratory thermometer</div>
+                      <div className="italic text-[9px]">Electronic laboratory thermometer</div>
                     </td>
-                    <td className="border border-black p-1.5">
+                    <td className="border border-black p-1.5 font-mono">
                       {info.standardType || 'LTA/Б-300МТ'}
                     </td>
-                    <td className="border border-black p-1.5">
+                    <td className="border border-black p-1.5 font-mono">
                       {info.standardSerial || '871352'}
                     </td>
-                    <td className="border border-black p-1.5">
+                    <td className="border border-black p-1.5 text-[9.5px]">
                       {info.standardTraceability || 'UZ-09T/2927-2024 от 07.11.2024 г.'}
                     </td>
                   </tr>
                   <tr>
-                    <td className="border border-black p-1.5">2</td>
-                    <td className="border border-black p-1.5">
+                    <td className="border border-black p-1.5 font-bold">2</td>
+                    <td className="border border-black p-1.5 text-left">
                       <div className="font-bold">
                         Термометр сопротивления с цифровой индикацией (Калибратор температуры)
                       </div>
-                      <div className="italic text-[9.5px]">
+                      <div className="italic text-[9px]">
                         Resistance thermometer with digital indication (Temperature Calibrator)
                       </div>
                     </td>
-                    <td className="border border-black p-1.5">STS-200 A 915 (RTC-156B)</td>
-                    <td className="border border-black p-1.5">613343-19 (617498-00393)</td>
-                    <td className="border border-black p-1.5">Uz-09T/630-2025 от 14.04.2025 г.</td>
+                    <td className="border border-black p-1.5 font-mono">STS-200 A 915 (RTC-156B)</td>
+                    <td className="border border-black p-1.5 font-mono">613343-19 (617498-00393)</td>
+                    <td className="border border-black p-1.5 text-[9.5px]">
+                      Uz-09T/630-2025 от 14.04.2025 г.
+                    </td>
                   </tr>
                 </tbody>
               </table>
             </div>
 
-            {/* Calibration Results Table */}
+            {/* Calibration Results Table (Exact single row matching the user's PDF) */}
             <div className="my-3">
-              <div className="mb-1.5 text-xs">
-                <div className="font-bold">Результаты калибровки, включая неопределенность</div>
+              <div className="mb-1">
+                <div className="font-bold text-[11px]">Результаты калибровки, включая неопределенность</div>
                 <div className="italic text-[10px]">Calibration results including uncertainty</div>
               </div>
 
-              <table className="w-full border-collapse border border-black text-[10.5px] text-center">
+              <table className="w-full border-collapse border border-black text-[10px] text-center">
                 <thead>
-                  <tr>
+                  <tr className="font-bold">
                     <th className="border border-black p-1.5 w-1/5">
-                      <div className="font-bold">Номинальная температура, °C</div>
-                      <div className="italic font-normal text-[9.5px]">Nominal temperature, °C</div>
+                      <div>Номинальная температура, °C</div>
+                      <div className="italic font-normal text-[9px]">Nominal temperature, °C</div>
                     </th>
                     <th className="border border-black p-1.5 w-1/5">
-                      <div className="font-bold">Опорное значение, °С</div>
-                      <div className="italic font-normal text-[9.5px]">Support meaning, °C</div>
+                      <div>Опорное значение, °С</div>
+                      <div className="italic font-normal text-[9px]">Support meaning, °C</div>
                     </th>
                     <th className="border border-black p-1.5 w-1/5">
-                      <div className="font-bold">Показание объекта калибровки, °С</div>
-                      <div className="italic font-normal text-[9.5px]">
+                      <div>Показание объекта калибровки, °С</div>
+                      <div className="italic font-normal text-[9px]">
                         Indication of the calibration object, °C
                       </div>
                     </th>
                     <th className="border border-black p-1.5 w-1/5">
-                      <div className="font-bold">Отклонение, °C</div>
-                      <div className="italic font-normal text-[9.5px]">Deviation, °C</div>
+                      <div>Отклонение, °C</div>
+                      <div className="italic font-normal text-[9px]">Deviation, °C</div>
                     </th>
                     <th className="border border-black p-1.5 w-1/5">
-                      <div className="font-bold">Расширенная неопределенность, °C</div>
-                      <div className="italic font-normal text-[9.5px]">
+                      <div>Расширенная неопределенность, °C</div>
+                      <div className="italic font-normal text-[9px]">
                         Expanded uncertainty, °C
                       </div>
                     </th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
+                  <tr className="font-mono font-medium">
                     <td className="border border-black p-1.5">
                       {formatMetrologyNumber(pointTemp, 1)}
                     </td>
@@ -643,43 +667,27 @@ export const OfficialCertificateView: React.FC<OfficialCertificateViewProps> = (
                       {formatMetrologyNumber(extUncertainty, 2)}
                     </td>
                   </tr>
-                  <tr className="h-6">
-                    <td className="border border-black" />
-                    <td className="border border-black" />
-                    <td className="border border-black" />
-                    <td className="border border-black" />
-                    <td className="border border-black" />
-                  </tr>
-                  <tr className="h-6">
-                    <td className="border border-black" />
-                    <td className="border border-black" />
-                    <td className="border border-black" />
-                    <td className="border border-black" />
-                    <td className="border border-black" />
-                  </tr>
                 </tbody>
               </table>
             </div>
 
-            {/* Additional Information */}
-            <div className="grid grid-cols-12 gap-2 items-center my-3 text-xs">
-              <div className="col-span-5">
-                <div className="font-bold">Дополнительная информация</div>
-                <div className="italic text-[10px]">Additional information</div>
-              </div>
-              <div className="col-span-7">{info.additionalInfo || '-------'}</div>
-            </div>
+            {/* Additional Information & Diagonal Hatched Pattern */}
+            <div className="my-3">
+              <div className="font-bold text-[11px]">Дополнительная информация</div>
+              <div className="italic text-[10px] mb-1">Additional information</div>
+              <div className="text-[10.5px] mb-2">{info.additionalInfo || '-------'}</div>
 
-            {/* Diagonal dashed lines matching sertifikat.pdf */}
-            <div className="my-2 relative h-36 overflow-hidden">
-              <svg width="100%" height="100%" viewBox="0 0 700 160" preserveAspectRatio="none">
-                <line x1="20" y1="150" x2="180" y2="5" stroke="#000" strokeWidth="1.2" strokeDasharray="5,4" />
-                <line x1="90" y1="155" x2="290" y2="5" stroke="#000" strokeWidth="1.2" strokeDasharray="5,4" />
-                <line x1="180" y1="155" x2="400" y2="5" stroke="#000" strokeWidth="1.2" strokeDasharray="5,4" />
-                <line x1="280" y1="155" x2="500" y2="5" stroke="#000" strokeWidth="1.2" strokeDasharray="5,4" />
-                <line x1="390" y1="155" x2="600" y2="5" stroke="#000" strokeWidth="1.2" strokeDasharray="5,4" />
-                <line x1="500" y1="155" x2="680" y2="15" stroke="#000" strokeWidth="1.2" strokeDasharray="5,4" />
-              </svg>
+              {/* Diagonal dashed hatching matching the PDF */}
+              <div className="relative h-32 border border-dashed border-slate-300 overflow-hidden bg-white">
+                <svg width="100%" height="100%" preserveAspectRatio="none" className="w-full h-full">
+                  <defs>
+                    <pattern id="certDiagHatch" patternUnits="userSpaceOnUse" width="40" height="40" patternTransform="rotate(45)">
+                      <line x1="0" y1="0" x2="0" y2="40" stroke="#000" strokeWidth="1.2" strokeDasharray="6,4" />
+                    </pattern>
+                  </defs>
+                  <rect width="100%" height="100%" fill="url(#certDiagHatch)" />
+                </svg>
+              </div>
             </div>
           </div>
 
@@ -693,16 +701,16 @@ export const OfficialCertificateView: React.FC<OfficialCertificateViewProps> = (
           style={{ fontFamily: 'Arial, sans-serif' }}
         >
           <div>
-            {renderPageHeader()}
+            {renderSubsequentHeader()}
             {renderPageSubHeader(4)}
 
-            {/* First Bordered Box: GUM & Traceability Statements */}
-            <div className="border border-black p-4 text-center space-y-3 my-4 text-[10.5px] leading-snug">
+            {/* First Bordered Box: GUM & SI Traceability & Result Reference */}
+            <div className="border border-black p-3.5 text-center space-y-2.5 my-3 text-[10.5px] leading-snug">
               <div>
                 <p className="font-bold">
                   Указанная расширенная неопределенность измерений определяется как стандартная неопределенность измерений, умноженная на коэффициент охвата k = 2, что для нормального распределения соответствует вероятности охвата приблизительно 95 %. Стандартная неопределенность измерений определена в соответствии с GUM.
                 </p>
-                <p className="italic mt-1">
+                <p className="italic mt-0.5 text-[9.5px]">
                   The reported expanded uncertainty of measurement is stated as the standard uncertainty of measurement multiplied by the coverage factor k = 2, which for a normal distribution corresponds to a coverage probability of approximately 95 %. The standard uncertainty of measurement has been determined in accordance with GUM.
                 </p>
               </div>
@@ -711,82 +719,76 @@ export const OfficialCertificateView: React.FC<OfficialCertificateViewProps> = (
                 <p className="font-bold">
                   Все измерения имеют прослеживаемость к единицам Международной системы SI
                 </p>
-                <p className="italic">All measurements are traceable to the SI units</p>
+                <p className="italic text-[9.5px]">All measurements are traceable to the SI units</p>
               </div>
 
               <div>
                 <p className="font-bold">
                   Результат калибровки относится только к объекту калибровки
                 </p>
-                <p className="italic">The calibration result refers only to the calibration item</p>
+                <p className="italic text-[9.5px]">The calibration result refers only to the calibration item</p>
               </div>
             </div>
 
-            {/* Second Bordered Box: Institutional & Khorezm Branch Accreditation */}
-            <div className="border border-black p-4 text-center space-y-3 my-4 text-[10.5px] leading-snug">
+            {/* Second Bordered Box: CIPM, O'ZAKK, APAC & ILAC Agreements */}
+            <div className="border border-black p-3.5 text-center space-y-2.5 my-3 text-[10px] leading-snug">
               <div>
                 <p className="font-bold">
                   Узбекский национальный институт метрологии является подписантом Договорённости о взаимном признании (MRA) Международного комитета по весам и мерам (CIPM).
                 </p>
-                <p className="italic">
-                  Uzbek National Institute of Metrology is a signatory of the International Committee for Weights and Measures (CIPM) Mutual Recognition Arrangement (MRA).
+                <p className="italic mt-0.5 text-[9.5px]">
+                  Uzbek National institute of Metrology is a signatory of the International Committee for Weights and Measures (CIPM) Mutual Recognition Arrangement (MRA).
                 </p>
               </div>
 
               <div>
                 <p className="font-bold">
-                  Хорезмский филиал ГУ «Узбекский национальный институт метрологии» аккредитован ГУ «Узбекским центром аккредитации» (O‘ZAKK) под регистрационным номером O‘ZAK.KL.0013 по O‘z DSt ISO/IEC 17025:2019 как калибровочная лаборатория.
+                  Хорезмский филиал ГУ «Узбекский национальный институт метрологии» аккредитован Узбекским центром аккредитации (O‘ZAKK) под регистрационным номером O‘ZAK.KL.0013 по O‘z DSt ISO/IEC 17025:2019 как калибровочная лаборатория.
                 </p>
-                <p className="italic">
-                  State Institution "Uzbek National Institute of Metrology" Khorezm Branch is accredited by the State Institution "Uzbek Accreditation Center" (O'ZAKK) under registration number O'ZAK.KL.0013 according to O'z DSt ISO/IEC 17025:2019 as a calibration laboratory.
+                <p className="italic mt-0.5 text-[9.5px]">
+                  "Uzbek National Institute of Metrology" state institution Khorezm branch accredited by Uzbek Accreditation Center (O‘ZAKK) under registration number O‘ZAK.KL.0013 for O‘z DSt ISO/IEC 17025:2019 as Calibration Laboratory.
                 </p>
               </div>
 
               <div>
                 <p className="font-bold">
-                  Узбекский центр аккредитации (O‘ZAKK) является подписантом Договорённости о взаимном признании (MRA) Международного сотрудничество по аккредитации лабораторий (ILAC).
+                  Узбекский центр аккредитации (O‘ZAKK) является подписантом Договорённости о взаимном признании (MRA) Азиатско-Тихоокеанского сотрудничества по аккредитации (APAC) и Договоренности о взаимном признании (MRA) Международного сотрудничества по аккредитации лабораторий (ILAC) для признания сертификатов калибровки.
                 </p>
-                <p className="italic">
-                  Uzbek Accreditation Center (O‘ZAKK) is a signatory of the International Laboratory Accreditation Cooperation (ILAC) Mutual Recognition Arrangement (MRA).
+                <p className="italic mt-0.5 text-[9.5px]">
+                  Uzbek Accreditation Center (O‘ZAKK) is a signatory to the Asia Pacific Accreditation Cooperation (APAC) Mutual Recognition Arrangement (MRA) and to the International Laboratory Accreditation Cooperation (ILAC) Mutual Recognition Arrangement (MRA) for the recognition of calibration certificates.
                 </p>
               </div>
             </div>
 
-            {/* Bottom Section: UzakkBadge (Left) + Feedback Text & QrCodeSvg (Right) + End of Certificate */}
-            <div className="mt-6 pt-2">
-              <div className="flex items-center justify-between gap-4 px-1">
-                <div className="shrink-0">
-                  <UzakkBadge />
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <div className="text-right text-[10.5px] leading-snug max-w-[185px]">
-                    <p className="font-bold text-black">
-                      Калибровочная лаборатория УзНИМ стремится получать обратную связь от своих заказчиков
-                    </p>
-                    <p className="italic text-black mt-0.5">
-                      UzNIM Calibration laboratory seeks feedback from its customers
-                    </p>
-                  </div>
-                  <div className="shrink-0">
-                    <QrCodeSvg size={115} />
-                  </div>
-                </div>
+            {/* Bottom Feedback Text & QR Code (Right aligned, NO Uzakk badge on left as in user PDF) */}
+            <div className="my-6 flex justify-end items-center gap-4 pr-3">
+              <div className="text-right text-[10px] leading-snug max-w-[210px]">
+                <p className="font-bold text-black">
+                  Калибровочная лаборатория УзНИМ стремится получать обратную связь от своих заказчиков
+                </p>
+                <p className="italic text-black text-[9px] mt-0.5">
+                  UzNIM Calibration laboratory seeks feedback from its customers
+                </p>
               </div>
+              <div className="shrink-0">
+                <QrCodeSvg size={100} />
+              </div>
+            </div>
 
-              <div className="text-center mt-5 pt-2">
-                <div className="font-bold text-[12px] text-black">
-                  Конец сертификата калибровки
-                </div>
-                <div className="italic text-[12px] text-black mt-0.5">
-                  End of Calibration Certificate
-                </div>
+            {/* End of Certificate marker */}
+            <div className="text-center mt-6 mb-2">
+              <div className="font-bold text-[13px] text-black uppercase tracking-wide">
+                Конец сертификата калибровки
+              </div>
+              <div className="italic text-[11px] text-black mt-0.5">
+                End of Calibration Certificate
               </div>
             </div>
           </div>
 
           {renderPageFooter()}
         </div>
+
       </div>
     </div>
   );

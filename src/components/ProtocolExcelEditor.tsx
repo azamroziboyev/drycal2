@@ -393,7 +393,7 @@ export const ProtocolExcelEditor: React.FC<ProtocolExcelEditorProps> = ({
               </span>
             </div>
             <div className="text-[11px] text-white/80">
-              O‘zMMI Kalibrlash Bayonnomasi • Microsoft Excel Online Integratsiyasi
+              O‘zMMI Kalibrlash Bayonnomasi • Microsoft Excel Jadval Muharriri
             </div>
           </div>
         </div>
@@ -421,7 +421,7 @@ export const ProtocolExcelEditor: React.FC<ProtocolExcelEditorProps> = ({
           </div>
         </div>
 
-        {/* Right: EXACTLY TWO DOWNLOAD BUTTONS AS REQUESTED */}
+        {/* Right: EXACTLY TWO DOWNLOAD BUTTONS */}
         <div className="flex items-center gap-2">
           {/* BUTTON 1: DOWNLOAD EXCEL (.xlsx) */}
           <button

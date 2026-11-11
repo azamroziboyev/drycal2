@@ -47,11 +47,11 @@ async function fetchBase64FromUrl(url: string): Promise<string | null> {
  * CRITICAL REQUIREMENT: Placed on a SINGLE SHEET ("Протокол" / "Лист 1") stacked vertically ("ust ma ust")
  * exactly matching the reviewer layout and user screenshots!
  */
-export async function exportProtocolToExcel(
+export async function buildProtocolWorkbook(
   info: CalibrationItemInfo,
   calculation: ChamberCalculation,
   pointsData: ChamberPointData[]
-) {
+): Promise<ExcelJS.Workbook> {
   const workbook = new ExcelJS.Workbook();
   workbook.creator = "O'zbekiston Milliy Metrologiya Instituti";
   workbook.lastModifiedBy = info.calibratedByUz || "G'aibnazarov Boburjon";
@@ -948,8 +948,32 @@ export async function exportProtocolToExcel(
   sheet.getCell('B119').font = { size: 10, italic: true };
   sheet.getCell('B119').alignment = { horizontal: 'center', vertical: 'middle' };
 
+  return workbook;
+}
+
+export async function exportProtocolToExcel(
+  info: CalibrationItemInfo,
+  calculation: ChamberCalculation,
+  pointsData: ChamberPointData[]
+) {
+  const workbook = await buildProtocolWorkbook(info, calculation, pointsData);
   const fileName = `Bayonnoma_${(info.certificateNumber || 'Uz-112-1-2025').replace(/[\/\\]/g, '_')}_${info.serialNumber || '2333001557'}.xlsx`;
   await saveWorkbook(workbook, fileName);
+}
+
+export async function generateProtocolExcelBlob(
+  info: CalibrationItemInfo,
+  calculation: ChamberCalculation,
+  pointsData: ChamberPointData[]
+): Promise<{ blob: Blob; url: string; fileName: string }> {
+  const workbook = await buildProtocolWorkbook(info, calculation, pointsData);
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  });
+  const url = URL.createObjectURL(blob);
+  const fileName = `Bayonnoma_${(info.certificateNumber || 'Uz-112-1-2025').replace(/[\/\\]/g, '_')}_${info.serialNumber || '2333001557'}.xlsx`;
+  return { blob, url, fileName };
 }
 
 /**

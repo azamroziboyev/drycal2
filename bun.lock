@@ -6,7 +6,6 @@
       "name": "react-example",
       "dependencies": {
         "@google/genai": "^2.4.0",
-        "@onlyoffice/document-editor-react": "^2.3.0",
         "@tailwindcss/vite": "^4.3.3",
         "@types/three": "^0.187.0",
         "@vitejs/plugin-react": "^6.1.1",
@@ -108,10 +107,6 @@
     "@jridgewell/sourcemap-codec": ["@jridgewell/sourcemap-codec@1.6.0", "", {}, "sha512-T7jf+5zgsZHwNJ4lvQ7/aezbyk0nNX+zJVWpmHA7VYsEx7a7qr5Rg5IbtJFqkgze5Y2sruq1RUY8Q837Od7iFw=="],
 
     "@jridgewell/trace-mapping": ["@jridgewell/trace-mapping@0.3.31", "", { "dependencies": { "@jridgewell/resolve-uri": "^3.1.0", "@jridgewell/sourcemap-codec": "^1.4.14" } }, "sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw=="],
-
-    "@onlyoffice/doceditor-types": ["@onlyoffice/doceditor-types@10.0.4", "", {}, "sha512-XyVlkg0rv421lyKC4KmTLOG+gJhvZCIFcS63+N8eiWmucCPzAsqmYYUsEDaE4XmRNf9VpQ1sKPenYJLVUEddjQ=="],
-
-    "@onlyoffice/document-editor-react": ["@onlyoffice/document-editor-react@2.3.0", "", { "dependencies": { "lodash": "4.18.1" }, "peerDependencies": { "@onlyoffice/doceditor-types": ">=9.3.1", "react": "^16.9.0 || ^17 || ^18 || ^19", "react-dom": "^16.9.0 || ^17 || ^18 || ^19" } }, "sha512-0g4j4iLUMYSRIAHnFilnXbMKwIIk8UIct+qnHMySW2r5cx8ii/zK8yaO2Meeqyd1bzmji5MTTkXcLJ+XHS6YeA=="],
 
     "@oxc-project/types": ["@oxc-project/types@0.156.0", "", {}, "sha512-1Duyg48TdJNdyhEB8Xn1L36bT9Pv6GUtlKjHxOys8xkaF/rQq3XJE+bAurSK/AgIz5mGFsb77cn9Pb20+WCScw=="],
 
@@ -628,8 +623,6 @@
     "lightningcss-win32-x64-msvc": ["lightningcss-win32-x64-msvc@1.33.0", "", { "os": "win32", "cpu": "x64" }, "sha512-OlEICDx/Xl0FqSp4bry8zFnCvGpig3Gl4gCquvYwHuqJKEC1+n9NgDniFvqHGmMv1ZkqDJrDqKKSykTDX+ehuA=="],
 
     "listenercount": ["listenercount@1.0.1", "", {}, "sha512-3mk/Zag0+IJxeDrxSgaDPy4zZ3w05PRZeJNnlWhzFz5OkX49J4krc+A8X2d2M69vGMBEX0uyl8M+W+8gH+kBqQ=="],
-
-    "lodash": ["lodash@4.18.1", "", {}, "sha512-dMInicTPVE8d1e5otfwmmjlxkZoUpiVLwyeTdUsi/Caj/gfzzblBcCE5sRHV/AsjuCmxWrte2TNGSYuCeCq+0Q=="],
 
     "lodash.defaults": ["lodash.defaults@4.2.0", "", {}, "sha512-qjxPLHd3r5DnsdGacqOMU6pb/avJzdh9tFX2ymgoZE27BmjXrNy/y4LoaiTeAb+O3gL8AfpJGtqfX/ae2leYYQ=="],
 
